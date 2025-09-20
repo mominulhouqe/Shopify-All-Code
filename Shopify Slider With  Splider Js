@@ -1,0 +1,198 @@
+{% comment %}
+  Splide.js Carousel - Shopify Section
+  - Drop this file in: sections/splide-carousel.liquid
+  - Add Splide CSS/JS via CDN once (auto-loader below avoids double-loading)
+  - Supports Theme Editor (block select, section load/unload)
+  - Fully customizable via settings
+{% endcomment %}
+
+<style>
+  .splide-{{ section.id }} { --slide-gap: {{ section.settings.gap | default: '1rem' }}; }
+  .splide-{{ section.id }} .splide__slide { position: relative; overflow: hidden; border-radius: {{ section.settings.radius | default: 12 }}px; }
+  .splide-{{ section.id }} .slide-card { display:flex; flex-direction:column; height:100%; background: {{ section.settings.card_bg | default: '#ffffff' }}; color: {{ section.settings.ink | default: '#0E2A42' }}; }
+  .splide-{{ section.id }} .slide-media img { width:100%; height: {{ section.settings.image_height | default: 360 }}px; object-fit: {{ section.settings.object_fit | default: 'cover' }}; display:block; }
+  .splide-{{ section.id }} .slide-body { padding: 14px; }
+  .splide-{{ section.id }} .slide-title { margin:0 0 6px; font-weight: 700; font-size: {{ section.settings.title_size | default: 18 }}px; }
+  .splide-{{ section.id }} .slide-text { margin:0; font-size: {{ section.settings.text_size | default: 14 }}px; opacity:.9; }
+  .splide-{{ section.id }} .slide-cta { margin-top:auto; padding: 12px 14px; text-align:center; text-decoration:none; border-radius: 999px; background: {{ section.settings.accent | default: '#0E2A42' }}; color:#fff; display:inline-block; }
+  .splide-{{ section.id }} .splide__track { margin: 0 auto; }
+  .splide-{{ section.id }} .splide__arrow { background: rgba(0,0,0,.55); }
+  .splide-{{ section.id }} .splide__pagination__page.is-active { transform: scale(1.2); }
+
+  .section-{{ section.id }}-padding { padding-top: {{ section.settings.pad_top | default: 36 }}px; padding-bottom: {{ section.settings.pad_bottom | default: 36 }}px; }
+  @media (min-width: 750px){ .section-{{ section.id }}-padding { padding-top: {{ section.settings.pad_top_desktop | default: 56 }}px; padding-bottom: {{ section.settings.pad_bottom_desktop | default: 56 }}px; } }
+</style>
+
+<section class="splide-section section-{{ section.id }}-padding">
+  {% if section.settings.heading != blank %}
+    <h2 class="page-width" style="margin:0 0 16px; text-align: {{ section.settings.heading_align }}; font-size: {{ section.settings.heading_size }}px;">
+      {{ section.settings.heading }}
+    </h2>
+  {% endif %}
+
+  <div class="page-width">
+    <div id="splide-{{ section.id }}" class="splide splide-{{ section.id }}" aria-label="{{ section.settings.aria_label | default: section.settings.heading | escape }}">
+      <div class="splide__track">
+        <ul class="splide__list" style="gap: var(--slide-gap)">
+          {% for block in section.blocks %}
+            <li class="splide__slide" {{ block.shopify_attributes }}>
+              <article class="slide-card">
+                {% if block.settings.image != blank %}
+                <div class="slide-media">
+                  <img
+                    src="{{ block.settings.image | img_url: '800x' }}"
+                    srcset="{{ block.settings.image | img_url: '400x' }} 400w, {{ block.settings.image | img_url: '800x' }} 800w, {{ block.settings.image | img_url: '1200x' }} 1200w"
+                    sizes="(min-width: 990px) 25vw, 90vw"
+                    alt="{{ block.settings.image.alt | escape }}" loading="lazy" />
+                </div>
+                {% endif %}
+                <div class="slide-body">
+                  {% if block.settings.title != blank %}
+                    <h3 class="slide-title">{{ block.settings.title }}</h3>
+                  {% endif %}
+                  {% if block.settings.text != blank %}
+                    <p class="slide-text">{{ block.settings.text }}</p>
+                  {% endif %}
+                  {% if block.settings.cta_label != blank and block.settings.cta_link != blank %}
+                    <a class="slide-cta" href="{{ block.settings.cta_link }}">{{ block.settings.cta_label }}</a>
+                  {% endif %}
+                </div>
+              </article>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function(){
+    // Load Splide CDN once per page
+    function ensureSplideLoaded(cb){
+      if(window.Splide){ cb(); return; }
+      if(window.__splideLoading){ document.addEventListener('splide:ready', cb, { once: true }); return; }
+      window.__splideLoading = true;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css';
+      document.head.appendChild(link);
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js';
+      script.defer = true;
+      script.onload = function(){ document.dispatchEvent(new CustomEvent('splide:ready')); };
+      document.head.appendChild(script);
+    }
+
+    var rootId = 'splide-{{ section.id }}';
+    var el = document.getElementById(rootId);
+    var instance = null;
+
+    function mount(){
+      if(!el) return;
+      ensureSplideLoaded(function(){
+        if(instance){ try{ instance.destroy(true); }catch(e){} }
+        instance = new Splide(el, {
+          type: '{{ section.settings.type }}',
+          perPage: {{ section.settings.per_page | default: 3 }},
+          perMove: {{ section.settings.per_move | default: 1 }},
+          gap: '{{ section.settings.gap | default: '1rem' }}',
+          autoplay: {{ section.settings.autoplay }},
+          interval: {{ section.settings.interval | default: 4000 }},
+          pauseOnHover: true,
+          pauseOnFocus: true,
+          arrows: {{ section.settings.arrows }},
+          pagination: {{ section.settings.pagination }},
+          rewind: {{ section.settings.rewind }},
+          speed: {{ section.settings.speed | default: 600 }},
+          breakpoints: {
+            989: { perPage: {{ section.settings.per_page_tablet | default: 2 }} },
+            749: { perPage: {{ section.settings.per_page_mobile | default: 1 }} }
+          }
+        }).mount();
+      });
+    }
+
+    function destroy(){ if(instance){ try{ instance.destroy(true); }catch(e){} instance = null; } }
+
+    // Initial mount
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mount) : mount();
+
+    // Theme Editor lifecycle
+    document.addEventListener('shopify:section:load', function(e){ if(e.detail && e.detail.sectionId === '{{ section.id }}'){ el = document.getElementById(rootId); mount(); } });
+    document.addEventListener('shopify:section:unload', function(e){ if(e.detail && e.detail.sectionId === '{{ section.id }}'){ destroy(); } });
+    document.addEventListener('shopify:block:select', function(e){
+      if(!instance) return;
+      var blockEl = e.target && e.target.closest('.splide__slide');
+      if(blockEl){
+        var idx = Array.prototype.indexOf.call(blockEl.parentNode.children, blockEl);
+        if(idx > -1){ instance.go(idx); }
+      }
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Splide Carousel",
+  "class": "splide-wrapper",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Featured Carousel" },
+    { "type": "range", "id": "heading_size", "min": 16, "max": 48, "step": 1, "unit": "px", "label": "Heading size", "default": 28 },
+    { "type": "select", "id": "heading_align", "label": "Heading alignment", "default": "left", "options": [
+      {"value":"left","label":"Left"}, {"value":"center","label":"Center"}, {"value":"right","label":"Right"}
+    ]},
+
+    { "type": "select", "id": "type", "label": "Carousel type", "default": "loop", "options": [
+      {"value":"slide","label":"Slide"}, {"value":"loop","label":"Loop"}
+    ]},
+    { "type": "range", "id": "per_page", "min": 1, "max": 6, "step": 1, "label": "Slides per view (desktop)", "default": 3 },
+    { "type": "range", "id": "per_page_tablet", "min": 1, "max": 4, "step": 1, "label": "Slides per view (tablet)", "default": 2 },
+ { "type": "range", "id": "per_page_mobile", "min": 1, "max": 9, "step": 1, "label": "Slides per view (mobile)", "default": 1 },
+
+    { "type": "range", "id": "per_move", "min": 1, "max": 3, "step": 1, "label": "Slides per move", "default": 1 },
+    { "type": "text", "id": "gap", "label": "Gap (e.g., 1rem, 12px)", "default": "1rem" },
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay", "default": true },
+    { "type": "number", "id": "interval", "label": "Autoplay interval (ms)", "default": 4000 },
+    { "type": "checkbox", "id": "arrows", "label": "Show arrows", "default": true },
+    { "type": "checkbox", "id": "pagination", "label": "Show pagination", "default": true },
+    { "type": "checkbox", "id": "rewind", "label": "Rewind at end", "default": false },
+    { "type": "number", "id": "speed", "label": "Transition speed (ms)", "default": 600 },
+
+    { "type": "color", "id": "accent", "label": "Accent color", "default": "#0E2A42" },
+    { "type": "color", "id": "card_bg", "label": "Card background", "default": "#ffffff" },
+    { "type": "color", "id": "ink", "label": "Text color", "default": "#0E2A42" },
+
+    { "type": "range", "id": "radius", "min": 0, "max": 28, "step": 1, "unit": "px", "label": "Corner radius", "default": 12 },
+    { "type": "range", "id": "image_height", "min": 160, "max": 640, "step": 10, "unit": "px", "label": "Image height", "default": 360 },
+    { "type": "select", "id": "object_fit", "label": "Image fit", "default": "cover", "options": [
+      {"value":"cover","label":"Cover"}, {"value":"contain","label":"Contain"}
+    ]},
+
+    { "type": "range", "id": "pad_top", "min": 0, "max": 80, "step": 2, "unit": "px", "label": "Padding top (mobile)", "default": 36 },
+    { "type": "range", "id": "pad_bottom", "min": 0, "max": 80, "step": 2, "unit": "px", "label": "Padding bottom (mobile)", "default": 36 },
+    { "type": "range", "id": "pad_top_desktop", "min": 0, "max": 120, "step": 2, "unit": "px", "label": "Padding top (desktop)", "default": 56 },
+    { "type": "range", "id": "pad_bottom_desktop", "min": 0, "max": 120, "step": 2, "unit": "px", "label": "Padding bottom (desktop)", "default": 56 },
+
+    { "type": "text", "id": "aria_label", "label": "ARIA Label", "default": "Carousel" },
+    { "type": "range", "id": "title_size", "min": 12, "max": 32, "step": 1, "label": "Card title size", "default": 18 },
+    { "type": "range", "id": "text_size", "min": 10, "max": 20, "step": 1, "label": "Card text size", "default": 14 }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Slide title" },
+        { "type": "textarea", "id": "text", "label": "Text", "default": "Short description for this slide." },
+        { "type": "url", "id": "cta_link", "label": "Button link" },
+        { "type": "text", "id": "cta_label", "label": "Button label", "default": "Shop now" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Splide Carousel", "category": "Custom" }
+  ]
+}
+{% endschema %}
