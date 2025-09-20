@@ -1,0 +1,397 @@
+{% comment %}
+  Alpine.js Slider Section
+  - Autoplay + Pause on hover
+  - Arrows + Dots
+  - Loop
+  - Responsive per-page (mobile / tablet / desktop)
+  - Swipe / Drag support
+  Unique root: #alpine-slider-{{ section.id }}
+{% endcomment %}
+
+<section
+  id="alpine-slider-{{ section.id }}"
+  class="alpine-slider"
+  x-data="
+    alpineSlider({
+      loop: {{ section.settings.loop | json }},
+      autoplay: {{ section.settings.autoplay | json }},
+      interval: {{ section.settings.interval | json }},
+      pauseOnHover: {{ section.settings.pause_on_hover | json }},
+      showArrows: {{ section.settings.show_arrows | json }},
+      showDots: {{ section.settings.show_dots | json }},
+      perPageMobile: {{ section.settings.per_page_mobile | default: 1 }},
+      perPageTablet: {{ section.settings.per_page_tablet | default: 2 }},
+      perPageDesktop: {{ section.settings.per_page_desktop | default: 3 }},
+      totalSlides: {{ section.blocks.size }}
+    })
+  "
+  x-init="init()"
+  :class="{'is-ready': ready}"
+  @mouseenter="maybePause()"
+  @mouseleave="maybeResume()"
+  style="--gap: 16px;"
+>
+  <div class="alpine-slider__viewport" x-ref="viewport">
+    <div
+      class="alpine-slider__track"
+      x-ref="track"
+      :style="`transform: translate3d(${-pageIndex * 100}%,0,0)`"
+      @pointerdown="onDragStart"
+      @pointerup="onDragEnd"
+      @pointercancel="onDragEnd"
+      @pointerleave="onDragEnd"
+      @pointermove="onDragMove"
+    >
+      {% for block in section.blocks %}
+        {% assign b = block.settings %}
+        <div class="alpine-slider__slide" style="padding-right: var(--gap);" {{ block.shopify_attributes }}>
+          <div class="alpine-slider__card">
+            {% if b.image != blank %}
+              <div class="alpine-slider__media">
+                <img
+                  src="{{ b.image | image_url: width: 1600 }}"
+                  srcset="
+                    {{ b.image | image_url: width: 640 }} 640w,
+                    {{ b.image | image_url: width: 960 }} 960w,
+                    {{ b.image | image_url: width: 1280 }} 1280w,
+                    {{ b.image | image_url: width: 1600 }} 1600w
+                  "
+                  sizes="(min-width: 1024px) calc(100vw / {{ section.settings.per_page_desktop | default: 3 }}), (min-width: 750px) calc(100vw / {{ section.settings.per_page_tablet | default: 2 }}), 100vw"
+                  alt="{{ b.image.alt | escape | default: b.title | escape }}"
+                  loading="lazy" width="100%" height="100%"
+                >
+              </div>
+            {% endif %}
+
+            {% if b.title != blank %}
+              <h3 class="alpine-slider__title">{{ b.title }}</h3>
+            {% endif %}
+
+            {% if b.subtitle != blank %}
+              <p class="alpine-slider__subtitle">{{ b.subtitle }}</p>
+            {% endif %}
+
+            {% if b.button_text != blank and b.button_url != blank %}
+              <a
+                class="alpine-slider__btn"
+                href="{{ b.button_url }}"
+                {% if b.open_new_tab %}
+                  target="_blank" rel="noopener noreferrer"
+                {% endif %}
+              >
+                {{ b.button_text }}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Arrows -->
+  <template x-if="showArrows">
+    <div class="alpine-slider__nav">
+      <button type="button" class="alpine-slider__arrow prev" @click="prev()" aria-label="Previous slide">‹</button>
+      <button type="button" class="alpine-slider__arrow next" @click="next()" aria-label="Next slide">›</button>
+    </div>
+  </template>
+
+  <!-- Dots -->
+  <template x-if="showDots && pageCount > 1">
+    <div class="alpine-slider__dots" role="tablist" :aria-label="`Slide dots (${pageCount})`">
+      <template x-for="i in pageCount" :key="i">
+        <button
+          class="alpine-slider__dot"
+          :class="{'is-active': pageIndex === (i-1)}"
+          @click="goTo(i-1)"
+          :aria-label="`Go to slide ${(i)}`"
+          :aria-selected="pageIndex === (i-1)"
+          role="tab"
+        ></button>
+      </template>
+    </div>
+  </template>
+</section>
+
+<!-- Styles (scoped to section id) -->
+<style>
+  #alpine-slider-{{ section.id }} {
+    position: relative;
+    width: 100%;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__viewport {
+    overflow: hidden;
+    width: 100%;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__track {
+    display: flex;
+    will-change: transform;
+    transition: transform 400ms ease;
+    touch-action: pan-y;
+    user-select: none;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__slide {
+    box-sizing: border-box;
+    flex: 0 0 calc((100% / var(--per-page)) - var(--gap));
+  }
+  /* Responsive per-page via CSS custom prop set by Alpine */
+  @media (min-width: 1024px) {
+    #alpine-slider-{{ section.id }} { --per-page: {{ section.settings.per_page_desktop | default: 3 }}; }
+  }
+  @media (min-width: 750px) and (max-width: 1023px) {
+    #alpine-slider-{{ section.id }} { --per-page: {{ section.settings.per_page_tablet | default: 2 }}; }
+  }
+  @media (max-width: 749px) {
+    #alpine-slider-{{ section.id }} { --per-page: {{ section.settings.per_page_mobile | default: 1 }}; }
+  }
+
+  #alpine-slider-{{ section.id }} .alpine-slider__card {
+    background: var(--color-background, #fff);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__media img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__title {
+    font-size: 18px; line-height: 1.3; margin: 12px 16px 6px;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__subtitle {
+    color: #555; margin: 0 16px 12px;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__btn {
+    display: inline-block; margin: 0 16px 16px; padding: 10px 14px;
+    background: #0E2A42; color: #fff; border-radius: 8px; text-decoration: none;
+  }
+
+  #alpine-slider-{{ section.id }} .alpine-slider__nav {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__arrow {
+    pointer-events: auto;
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(0,0,0,.1);
+    background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    font-size: 22px; line-height: 1; display: grid; place-items: center; cursor: pointer;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__arrow.prev { left: 8px; }
+  #alpine-slider-{{ section.id }} .alpine-slider__arrow.next { right: 8px; }
+
+  #alpine-slider-{{ section.id }} .alpine-slider__dots {
+    display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #cfd8dc; border: 0; cursor: pointer;
+  }
+  #alpine-slider-{{ section.id }} .alpine-slider__dot.is-active { background: #0E2A42; }
+</style>
+
+<!-- Alpine.js (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<!-- Slider Controller -->
+<script>
+  function alpineSlider(opts) {
+    return {
+      // options
+      loop: !!opts.loop,
+      autoplay: !!opts.autoplay,
+      interval: Number(opts.interval) || 4000,
+      pauseOnHover: !!opts.pauseOnHover,
+      showArrows: !!opts.showArrows,
+      showDots: !!opts.showDots,
+
+      perPageMobile: Math.max(1, Number(opts.perPageMobile) || 1),
+      perPageTablet: Math.max(1, Number(opts.perPageTablet) || 2),
+      perPageDesktop: Math.max(1, Number(opts.perPageDesktop) || 3),
+
+      totalSlides: Number(opts.totalSlides) || 0,
+
+      // state
+      ready: false,
+      pageIndex: 0,
+      pageCount: 1,
+      timer: null,
+
+      // drag state
+      isDown: false,
+      startX: 0,
+      deltaX: 0,
+      threshold: 40,
+
+      init() {
+        this.recompute();
+        this.bindResize();
+        if (this.autoplay) this.start();
+        this.ready = true;
+      },
+
+      currentPerPage() {
+        const w = window.innerWidth;
+        if (w >= 1024) return this.perPageDesktop;
+        if (w >= 750) return this.perPageTablet;
+        return this.perPageMobile;
+      },
+
+      recompute() {
+        const perPage = this.currentPerPage();
+        this.pageCount = Math.max(1, Math.ceil(this.totalSlides / perPage));
+        if (this.pageIndex > this.pageCount - 1) this.pageIndex = this.pageCount - 1;
+      },
+
+      bindResize() {
+        let t;
+        window.addEventListener('resize', () => {
+          clearTimeout(t);
+          t = setTimeout(() => {
+            this.recompute();
+          }, 150);
+        });
+      },
+
+      next() {
+        if (this.pageCount <= 1) return;
+        if (this.pageIndex < this.pageCount - 1) {
+          this.pageIndex++;
+        } else if (this.loop) {
+          this.pageIndex = 0;
+        }
+      },
+      prev() {
+        if (this.pageCount <= 1) return;
+        if (this.pageIndex > 0) {
+          this.pageIndex--;
+        } else if (this.loop) {
+          this.pageIndex = this.pageCount - 1;
+        }
+      },
+      goTo(i) {
+        this.pageIndex = Math.min(Math.max(0, i), this.pageCount - 1);
+      },
+
+      // autoplay
+      start() {
+        this.stop();
+        this.timer = setInterval(() => {
+          this.next();
+        }, this.interval);
+      },
+      stop() {
+        if (this.timer) clearInterval(this.timer);
+        this.timer = null;
+      },
+      maybePause() {
+        if (this.pauseOnHover && this.autoplay) this.stop();
+      },
+      maybeResume() {
+        if (this.pauseOnHover && this.autoplay) this.start();
+      },
+
+      // drag / swipe
+      onDragStart(e) {
+        this.isDown = true;
+        this.startX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+        this.deltaX = 0;
+        e.target.setPointerCapture?.(e.pointerId);
+        this.stop();
+      },
+      onDragMove(e) {
+        if (!this.isDown) return;
+        const x = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+        this.deltaX = x - this.startX;
+      },
+      onDragEnd() {
+        if (!this.isDown) return;
+        const moved = this.deltaX;
+        this.isDown = false;
+        if (Math.abs(moved) > this.threshold) {
+          moved < 0 ? this.next() : this.prev();
+        }
+        if (this.autoplay) this.start();
+        this.deltaX = 0;
+      },
+    };
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Alpine.js Slider",
+  "settings": [
+    { "type": "header", "content": "General" },
+    { "type": "checkbox", "id": "loop", "label": "Loop slides", "default": true },
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay", "default": true },
+
+    {
+  "type": "range",
+  "id": "interval",
+  "label": "Autoplay interval (ms)",
+  "min": 1000,
+  "max": 6000,
+  "step": 50,
+  "default": 4000
+}
+,
+    { "type": "checkbox", "id": "pause_on_hover", "label": "Pause on hover", "default": true },
+
+    { "type": "header", "content": "Navigation" },
+    { "type": "checkbox", "id": "show_arrows", "label": "Show arrows", "default": true },
+    { "type": "checkbox", "id": "show_dots", "label": "Show dots", "default": true },
+
+    { "type": "header", "content": "Responsive per-page" },
+    {
+      "type": "range",
+      "id": "per_page_mobile",
+      "label": "Slides per view (mobile)",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "per_page_tablet",
+      "label": "Slides per view (tablet)",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "per_page_desktop",
+      "label": "Slides per view (desktop)",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "default": 3
+    }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Slide Title" },
+        { "type": "textarea", "id": "subtitle", "label": "Subtitle", "default": "Short supporting copy goes here." },
+        { "type": "text", "id": "button_text", "label": "Button text", "default": "Shop now" },
+        { "type": "url", "id": "button_url", "label": "Button link" },
+        { "type": "checkbox", "id": "open_new_tab", "label": "Open in new tab", "default": false }
+      ]
+    }
+  ],
+  "max_blocks": 20,
+  "presets": [
+    {
+      "name": "Alpine.js Slider",
+      "category": "Custom",
+      "blocks": [{ "type": "slide" }, { "type": "slide" }, { "type": "slide" }]
+    }
+  ]
+}
+{% endschema %}
