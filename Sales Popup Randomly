@@ -1,0 +1,161 @@
+<!-- Real Customer Sales Popup -->
+<div class="sales-popup" id="salesPopup">
+  <img src="{{ product.featured_image | img_url: '100x100' }}" width="100" height="100" alt="{{ product.title }}">
+  <div class="popup-text">
+    <div class="popup-stars">
+      <span class="stars">★★★★★</span>
+      <span class="star-text">5 Stars</span>
+    </div>
+    <strong class="popup-user">
+      <span class="user-name">Lori Blakeman</span> from Marengo WI, USA
+    </strong><br>
+    Purchased <span class="popup-product">{{ product.title | truncate: 20 }}</span>
+    <span class="popup-time">2 hours ago</span> 🎉
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const users = [
+      'Lori Blakeman','Linda Connelly','Michelle Stejer Becker','Bernard Henneberg','Michael Tan',
+      'George Heywood','Gregory Helling','Judith Koehn','Barbara Muehler','Noelle McCarty',
+      'John Raffa','Bradley Panveno','Manya Segal','Shane Battier','Asher Williams',
+      'Barb Frankel','Paulette Newman','Anne Richardson'
+    ];
+
+    const locations = [
+      'Marengo WI, USA',
+      'Philadelphia PA, USA',
+      'Selbyville DE, USA',
+      'Glendale AZ, USA',
+      'Toledo OH, USA',
+      'Dallas TX, USA',
+      'Seattle WA, USA',
+      'Boston MA, USA',
+      'Chicago IL, USA',
+      'Miami FL, USA',
+      'Atlanta GA, USA',
+      'Denver CO, USA',
+      'Portland OR, USA',
+      'Nashville TN, USA',
+      'Phoenix AZ, USA',
+      'Orlando FL, USA',
+      'Cleveland OH, USA',
+      'Austin TX, USA',
+      'San Diego CA, USA',
+      'New York NY, USA'
+    ];
+
+    const popup = document.getElementById('salesPopup');
+    const timeElement = document.querySelector('.popup-time');
+    const userElement = document.querySelector('.popup-user');
+    const nameSpan = userElement.querySelector('.user-name');
+
+    function getRandomTime() {
+      const hours = Math.floor(Math.random() * 24) + 1;
+      return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+    }
+
+    function updatePopup() {
+      const user = users[Math.floor(Math.random() * users.length)];
+      const location = locations[Math.floor(Math.random() * locations.length)];
+      const timeAgo = getRandomTime();
+
+      nameSpan.innerText = user;
+      userElement.innerHTML = `<span class="user-name">${user}</span> from ${location}`;
+      timeElement.innerText = timeAgo;
+    }
+
+    function cyclePopup() {
+      updatePopup();
+      popup.classList.add('show');
+      setTimeout(() => popup.classList.remove('show'), 3500);
+    }
+
+    setTimeout(() => {
+      cyclePopup();
+      setInterval(cyclePopup, 6000);
+    }, 2000);
+  });
+</script>
+
+<style>
+  .sales-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px 14px;
+    font-size: 14px;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+  }
+
+  .sales-popup.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .sales-popup img {
+    width: 55px;
+    height: 55px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .popup-text { line-height: 1.4; }
+
+  .popup-stars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .stars {
+    color: #f8b400;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .star-text {
+    color: #111;
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+
+
+  .user-name {
+    color: #f66206; 
+    font-weight: 700;
+  }
+
+  .popup-product {
+    font-weight: 700;
+    color:#98272d;
+  }
+
+  .popup-time {
+    color: #777;
+    font-size: 13px;
+    margin-left: 4px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .sales-popup {
+      bottom: 80px;
+      left: 15px;
+      right: 15px;
+      max-width: calc(100% - 30px);
+    }
+  }
+</style>
