@@ -1,0 +1,245 @@
+{% assign uid = section.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .video-carousel-{{ uid }} {
+    --slides-desktop: {{ section.settings.slides_desktop }};
+    --slides-tablet: {{ section.settings.slides_tablet }};
+    --slides-mobile: {{ section.settings.slides_mobile }};
+    --gap: {{ section.settings.gap }}px;
+    --radius: {{ section.settings.radius }}px;
+    --height: {{ section.settings.video_height }}px;
+    width: 100%;
+    overflow: hidden;
+    background: {{ section.settings.background }};
+    padding: {{ section.settings.padding }}px 0;
+    max-width:1200px ;
+    margin: 0 auto;
+  }
+  .video-carousel-{{ uid }} h2 {
+    font-size: {{ section.settings.heading_size }}px;
+    color: {{ section.settings.heading_color }};
+    text-align: {{ section.settings.heading_align }};
+    margin-bottom: 20px;
+  }
+  .video-track-{{ uid }} {
+    display: flex;
+    gap: var(--gap);
+    transition: transform .4s ease;
+    padding: 0 var(--gap);
+    cursor: grab;
+  }
+  .video-slide-{{ uid }} {
+    flex: 0 0 calc((100% - (var(--gap) * (var(--slides-desktop) - 1))) / var(--slides-desktop));
+    height: var(--height);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+    position: relative;
+  }
+  .video-slide-{{ uid }} video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .video-controls-{{ uid }} {
+    display: none; justify-content: center; margin-top: 16px;gap:20px;
+  }
+  .video-arrow-{{ uid }} {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: {{ section.settings.arrow_bg }};
+    color: {{ section.settings.arrow_icon }};
+    display:flex; align-items:center; justify-content:center;
+    border:none; cursor:pointer; transition:.3s;
+  }
+  .video-arrow-{{ uid }}:hover { background: {{ section.settings.arrow_hover }}; transform: scale(1.1); }
+  .video-dots-{{ uid }} { display:flex; gap:8px; justify-content:center; margin-top:10px; }
+  .video-dot-{{ uid }} {
+    width:12px; height:12px; border-radius:50%;
+    background: rgba(0,0,0,.3); border:none; cursor:pointer;
+  }
+  .video-dot-{{ uid }}.active { background: {{ section.settings.dot_active }}; }
+
+  /* responsive */
+  @media(max-width:1024px){
+    .video-slide-{{ uid }} { flex: 0 0 calc((100% - (var(--gap) * (var(--slides-tablet) - 1))) / var(--slides-tablet)); }
+  }
+  @media(max-width:749px){
+    .video-slide-{{ uid }} { flex: 0 0 calc((100% - (var(--gap) * (var(--slides-mobile) - 1))) / var(--slides-mobile)); }
+  }
+{% endstyle %}
+
+<div class="video-carousel-{{ uid }}">
+  {% if section.settings.heading != blank %}
+    <h2>{{ section.settings.heading }}</h2>
+  {% endif %}
+
+  <div class="video-track-{{ uid }}">
+    {% for block in section.blocks %}
+      {% if block.settings.video != blank %}
+        <div class="video-slide-{{ uid }}">
+          <video
+            {% if section.settings.autoplay_videos %}
+              autoplay muted loop
+            {% endif %}
+            playsinline
+            preload="metadata"
+            {% if section.settings.show_controls %}
+              controls
+            {% endif %}
+          >
+            {% for src in block.settings.video.sources %}
+              <source src="{{ src.url }}" type="{{ src.mime_type }}">
+            {% endfor %}
+          </video>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="video-dots-{{ uid }}"></div>
+  <div class="video-controls-{{ uid }}">
+    <button class="video-arrow-{{ uid }} prev">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        class="bi bi-arrow-left"
+        viewBox="0 0 16 16"
+      >
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+      </svg>
+    </button>
+    <button class="video-arrow-{{ uid }} next">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        class="bi bi-arrow-right"
+        viewBox="0 0 16 16"
+      >
+        <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{
+  const carousel=document.querySelector(".video-carousel-{{ uid }}");
+  const track=carousel.querySelector(".video-track-{{ uid }}");
+  const slides=carousel.querySelectorAll(".video-slide-{{ uid }}");
+  const prev=carousel.querySelector(".prev");
+  const next=carousel.querySelector(".next");
+  const dotsC=carousel.querySelector(".video-dots-{{ uid }}");
+
+  let index=0, startX=0, currentX=0, isDragging=false;
+  let slidesPerView = getSlides();
+
+  function getSlides(){
+    if(window.innerWidth<=749) return {{ section.settings.slides_mobile }};
+    if(window.innerWidth<=1024) return {{ section.settings.slides_tablet }};
+    return {{ section.settings.slides_desktop }};
+  }
+  function update(){
+    const slideW=slides[0].offsetWidth+parseInt(getComputedStyle(track).gap);
+    track.style.transform=`translateX(-${index*slideW}px)`;
+    dotsC.querySelectorAll("button").forEach((d,i)=>d.classList.toggle("active",i===index));
+  }
+  function createDots(){
+    dotsC.innerHTML="";
+    const total=Math.max(1,slides.length-slidesPerView+1);
+    for(let i=0;i<total;i++){
+      const dot=document.createElement("button");
+      dot.className="video-dot-{{ uid }}";
+      dot.addEventListener("click",()=>{index=i;update();});
+      dotsC.appendChild(dot);
+    }
+  }
+  prev.addEventListener("click",()=>{index=Math.max(0,index-1);update();});
+  next.addEventListener("click",()=>{index=Math.min(slides.length-slidesPerView,index+1);update();});
+  window.addEventListener("resize",()=>{slidesPerView=getSlides();createDots();update();});
+
+  /* drag/swipe support */
+  track.addEventListener("mousedown",(e)=>{isDragging=true;startX=e.pageX;track.style.cursor="grabbing";});
+  track.addEventListener("mousemove",(e)=>{if(!isDragging) return; currentX=e.pageX-startX; track.style.transform=`translateX(${currentX - index*slides[0].offsetWidth}px)`;});
+  track.addEventListener("mouseup",(e)=>{isDragging=false;track.style.cursor="grab"; if(currentX < -50) next.click(); if(currentX > 50) prev.click(); currentX=0; update();});
+  track.addEventListener("mouseleave",()=>{if(isDragging){isDragging=false;currentX=0;update();}});
+  track.addEventListener("touchstart",(e)=>{isDragging=true;startX=e.touches[0].clientX;});
+  track.addEventListener("touchmove",(e)=>{if(!isDragging) return; currentX=e.touches[0].clientX-startX;});
+  track.addEventListener("touchend",()=>{isDragging=false;if(currentX < -50) next.click(); if(currentX > 50) prev.click(); currentX=0; update();});
+
+  createDots(); update();
+
+  /* autoplay slider */
+  {% if section.settings.autoplay_slider %}
+  setInterval(()=>{ index = (index < slides.length-slidesPerView) ? index+1 : 0; update(); }, {{ section.settings.autoplay_speed }}000);
+  {% endif %}
+});
+</script>
+
+{% schema %}
+{
+  "name": "Pro Video Carousel",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Our Videos" },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading font size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "default": 24
+    },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#000" },
+    {
+      "type": "select",
+      "id": "heading_align",
+      "label": "Heading align",
+      "default": "center",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ]
+    },
+    { "type": "color", "id": "background", "label": "Background", "default": "#fff" },
+    { "type": "range", "id": "padding", "label": "Section padding", "min": 0, "max": 100, "step": 10, "default": 40 },
+    {
+      "type": "range",
+      "id": "video_height",
+      "label": "Video height",
+      "min": 200,
+      "max": 600,
+      "step": 20,
+      "default": 300
+    },
+    { "type": "range", "id": "radius", "label": "Video corner radius", "min": 0, "max": 30, "step": 2, "default": 12 },
+    { "type": "range", "id": "gap", "label": "Gap between slides", "min": 5, "max": 40, "step": 1, "default": 20 },
+    { "type": "number", "id": "slides_desktop", "label": "Slides per view (desktop)", "default": 4 },
+    { "type": "number", "id": "slides_tablet", "label": "Slides per view (tablet)", "default": 2 },
+    { "type": "number", "id": "slides_mobile", "label": "Slides per view (mobile)", "default": 1 },
+    { "type": "checkbox", "id": "autoplay_videos", "label": "Autoplay videos", "default": true },
+    { "type": "checkbox", "id": "show_controls", "label": "Show video controls", "default": true },
+    { "type": "checkbox", "id": "autoplay_slider", "label": "Autoplay carousel", "default": true },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "label": "Autoplay speed (sec)",
+      "min": 3,
+      "max": 15,
+      "step": 1,
+      "default": 6
+    },
+    { "type": "color", "id": "arrow_bg", "label": "Arrow bg", "default": "#fff" },
+    { "type": "color", "id": "arrow_hover", "label": "Arrow hover bg", "default": "#eee" },
+    { "type": "color", "id": "arrow_icon", "label": "Arrow icon", "default": "#000" },
+    { "type": "color", "id": "dot_active", "label": "Dot active", "default": "#000" }
+  ],
+  "blocks": [
+    { "type": "video", "name": "Video", "settings": [{ "type": "video", "id": "video", "label": "Upload video" }] }
+  ],
+  "presets": [{ "name": "Pro Video Carousel" }]
+}
+{% endschema %}
