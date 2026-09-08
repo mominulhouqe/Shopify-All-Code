@@ -78,31 +78,29 @@
     </div>
 
     {% if section.blocks.size > 1 and section.settings.show_arrows %}
-      <button
-        type="button"
-        class="pro-arrow pro-arrow-prev"
-        aria-label="Previous slide"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"
-          />
-        </svg>
-      </button>
+      <div class="pro-arrows-wrapper">
+        <button
+          type="button"
+          class="pro-arrow pro-arrow-prev"
+          aria-label="Previous slide"
+        >
+          <!-- Real Chevron Left Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
 
-      <button
-        type="button"
-        class="pro-arrow pro-arrow-next"
-        aria-label="Next slide"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708-.708l3.147 3.146H15.5A.5.5 0 0 0 15 8"
-          />
-        </svg>
-      </button>
+        <button
+          type="button"
+          class="pro-arrow pro-arrow-next"
+          aria-label="Next slide"
+        >
+          <!-- Real Chevron Right Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
     {% endif %}
   </div>
 </section>
@@ -149,7 +147,6 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border-radius:10px;
   }
 
   #pro-carousel-{{ section.id }} .pro-media {
@@ -221,37 +218,23 @@
 
     {% case section.settings.content_position %}
       {% when 'top-left' %}
-        top: 0;
-        left: 0;
+        top: 0; left: 0;
       {% when 'top-center' %}
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 0; left: 50%; transform: translateX(-50%);
       {% when 'top-right' %}
-        top: 0;
-        right: 0;
+        top: 0; right: 0;
       {% when 'middle-left' %}
-        top: 50%;
-        left: 0;
-        transform: translateY(-50%);
+        top: 50%; left: 0; transform: translateY(-50%);
       {% when 'center' %}
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        top: 50%; left: 50%; transform: translate(-50%, -50%);
       {% when 'middle-right' %}
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
+        top: 50%; right: 0; transform: translateY(-50%);
       {% when 'bottom-left' %}
-        bottom: 0;
-        left: 0;
+        bottom: 0; left: 0;
       {% when 'bottom-center' %}
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
+        bottom: 0; left: 50%; transform: translateX(-50%);
       {% when 'bottom-right' %}
-        bottom: 0;
-        right: 0;
+        bottom: 0; right: 0;
     {% endcase %}
   }
 
@@ -295,12 +278,35 @@
     border-color: {{ section.settings.button_hover_border_color }};
   }
 
-  /* Arrows */
-  #pro-carousel-{{ section.id }} .pro-arrow {
+  /* Dynamic Navigation Container (Desktop) */
+  #pro-carousel-{{ section.id }} .pro-arrows-wrapper {
     position: absolute;
     z-index: 6;
-    top: 50%;
-    transform: translateY(-50%);
+    display: flex;
+    gap: {{ section.settings.arrow_gap }}px;
+    padding: {{ section.settings.arrow_offset_y }}px {{ section.settings.arrow_offset_x }}px;
+    box-sizing: border-box;
+
+    {% case section.settings.arrows_position %}
+      {% when 'bottom-right' %}
+        bottom: 0; right: 0;
+      {% when 'bottom-left' %}
+        bottom: 0; left: 0;
+      {% when 'bottom-center' %}
+        bottom: 0; left: 50%; transform: translateX(-50%);
+      {% when 'top-right' %}
+        top: 0; right: 0;
+      {% when 'top-left' %}
+        top: 0; left: 0;
+      {% when 'sides' %}
+        top: 50%; left: 0; width: 100%;
+        justify-content: space-between;
+        transform: translateY(-50%);
+        padding: 0 {{ section.settings.arrow_offset_x }}px;
+    {% endcase %}
+  }
+
+  #pro-carousel-{{ section.id }} .pro-arrow {
     width: {{ section.settings.arrow_size }}px;
     height: {{ section.settings.arrow_size }}px;
     display: flex;
@@ -312,25 +318,17 @@
     color: {{ section.settings.arrow_color }};
     border-radius: {{ section.settings.arrow_radius }}px;
     cursor: pointer;
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
+
+  #pro-carousel-{{ section.id }} .pro-arrow:hover {
+    opacity: 0.85;
   }
 
   #pro-carousel-{{ section.id }} .pro-arrow svg {
     width: {{ section.settings.arrow_icon_size }}px;
     height: {{ section.settings.arrow_icon_size }}px;
     display: block;
-    fill: currentColor;
-  }
-
-  #pro-carousel-{{ section.id }} .pro-arrow-next svg {
-    transform: scaleX(-1);
-  }
-
-  #pro-carousel-{{ section.id }} .pro-arrow-prev {
-    left: {{ section.settings.arrow_spacing }}px;
-  }
-
-  #pro-carousel-{{ section.id }} .pro-arrow-next {
-    right: {{ section.settings.arrow_spacing }}px;
   }
 
   /* Responsive Mobile View */
@@ -338,10 +336,9 @@
     #pro-carousel-{{ section.id }} .pro-desktop {
       display: none;
     }
-  #pro-carousel-{{ section.id }} .pro-slide {
-
-    border-radius:0px;
-  }
+    #pro-carousel-{{ section.id }} .pro-slide {
+      border-radius:0px;
+    }
     #pro-carousel-{{ section.id }} .pro-mobile {
       display: flex;
     }
@@ -361,20 +358,11 @@
 
       {% case section.settings.mobile_content_position %}
         {% when 'top' %}
-          top: 0;
-          bottom: auto;
-          left: 50%;
-          transform: translateX(-50%);
+          top: 0; bottom: auto; left: 50%; transform: translateX(-50%);
         {% when 'center' %}
-          top: 50%;
-          bottom: auto;
-          left: 50%;
-          transform: translate(-50%, -50%);
+          top: 50%; bottom: auto; left: 50%; transform: translate(-50%, -50%);
         {% when 'bottom' %}
-          top: auto;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
+          top: auto; bottom: 0; left: 50%; transform: translateX(-50%);
       {% endcase %}
     }
 
@@ -395,6 +383,23 @@
       font-size: {{ section.settings.mobile_button_font_size }}px;
     }
 
+    /* Mobile Navigation Container */
+    #pro-carousel-{{ section.id }} .pro-arrows-wrapper {
+      padding: 15px;
+      gap: 8px;
+
+      {% case section.settings.mobile_arrows_position %}
+        {% when 'bottom-right' %}
+          top: auto; bottom: 0; left: auto; right: 0; transform: none; width: auto; justify-content: flex-end;
+        {% when 'bottom-left' %}
+          top: auto; bottom: 0; left: 0; right: auto; transform: none; width: auto; justify-content: flex-start;
+        {% when 'bottom-center' %}
+          top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); width: auto; justify-content: center;
+        {% when 'sides' %}
+          top: 50%; bottom: auto; left: 0; right: auto; width: 100%; justify-content: space-between; transform: translateY(-50%); padding: 0 10px;
+      {% endcase %}
+    }
+
     #pro-carousel-{{ section.id }} .pro-arrow {
       width: {{ section.settings.mobile_arrow_size }}px;
       height: {{ section.settings.mobile_arrow_size }}px;
@@ -403,14 +408,6 @@
     #pro-carousel-{{ section.id }} .pro-arrow svg {
       width: {{ section.settings.mobile_arrow_icon_size }}px;
       height: {{ section.settings.mobile_arrow_icon_size }}px;
-    }
-
-    #pro-carousel-{{ section.id }} .pro-arrow-prev {
-      left: 8px;
-    }
-
-    #pro-carousel-{{ section.id }} .pro-arrow-next {
-      right: 8px;
     }
   }
 </style>
@@ -597,7 +594,7 @@
     {
       "type": "checkbox",
       "id": "show_arrows",
-      "label": "Show Navigation Arrows",
+      "label": "Show Navigation Controls",
       "default": true
     },
     {
@@ -1057,24 +1054,80 @@
     },
     {
       "type": "header",
-      "content": "Navigation Arrows"
+      "content": "Navigation Chevron Icons & Position"
+    },
+    {
+      "type": "select",
+      "id": "arrows_position",
+      "label": "Controls Position (Desktop)",
+      "options": [
+        { "value": "bottom-right", "label": "Bottom Right" },
+        { "value": "bottom-left", "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "top-right", "label": "Top Right" },
+        { "value": "top-left", "label": "Top Left" },
+        { "value": "sides", "label": "Both Sides (Left / Right)" }
+      ],
+      "default": "bottom-right"
+    },
+    {
+      "type": "select",
+      "id": "mobile_arrows_position",
+      "label": "Controls Position (Mobile)",
+      "options": [
+        { "value": "bottom-right", "label": "Bottom Right" },
+        { "value": "bottom-left", "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "sides", "label": "Both Sides (Left / Right)" }
+      ],
+      "default": "bottom-right"
+    },
+    {
+      "type": "range",
+      "id": "arrow_offset_x",
+      "label": "Horizontal Edge Padding",
+      "min": 5,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "arrow_offset_y",
+      "label": "Vertical Edge Padding",
+      "min": 5,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "arrow_gap",
+      "label": "Gap Between Chevron Buttons",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 10
     },
     {
       "type": "color",
       "id": "arrow_bg",
-      "label": "Arrow Background",
+      "label": "Icon Background",
       "default": "#000000"
     },
     {
       "type": "color",
       "id": "arrow_color",
-      "label": "Arrow Icon Color",
+      "label": "Chevron Color",
       "default": "#ffffff"
     },
     {
       "type": "range",
       "id": "arrow_size",
-      "label": "Desktop Arrow Size",
+      "label": "Desktop Button Size",
       "min": 25,
       "max": 80,
       "step": 1,
@@ -1084,7 +1137,7 @@
     {
       "type": "range",
       "id": "arrow_icon_size",
-      "label": "Desktop Icon Size",
+      "label": "Desktop Chevron Size",
       "min": 10,
       "max": 40,
       "step": 1,
@@ -1094,42 +1147,32 @@
     {
       "type": "range",
       "id": "mobile_arrow_size",
-      "label": "Mobile Arrow Size",
+      "label": "Mobile Button Size",
       "min": 20,
       "max": 50,
       "step": 1,
       "unit": "px",
-      "default": 30
+      "default": 32
     },
     {
       "type": "range",
       "id": "mobile_arrow_icon_size",
-      "label": "Mobile Icon Size",
+      "label": "Mobile Chevron Size",
       "min": 8,
       "max": 30,
       "step": 1,
       "unit": "px",
-      "default": 14
+      "default": 16
     },
     {
       "type": "range",
       "id": "arrow_radius",
-      "label": "Arrow Radius",
+      "label": "Button Corner Radius",
       "min": 0,
       "max": 50,
       "step": 1,
       "unit": "px",
       "default": 4
-    },
-    {
-      "type": "range",
-      "id": "arrow_spacing",
-      "label": "Desktop Arrow Spacing",
-      "min": 5,
-      "max": 60,
-      "step": 1,
-      "unit": "px",
-      "default": 20
     }
   ],
   "blocks": [
